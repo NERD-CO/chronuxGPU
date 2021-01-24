@@ -72,7 +72,9 @@ tapers=dpsschk(tapers,N,Fs); % check tapers
 global CHRONUXGPU
 if ~isempty(CHRONUXGPU) && CHRONUXGPU && gpuDeviceCount 
   J1=mtfftc(gpuArray(data1), gpuArray(tapers), nfft, Fs);
+  J1 = gather(J1);
   J2=mtfftc(gpuArray(data2), gpuArray(tapers), nfft, Fs);
+  J2 = gather(J2);
 else
   J1=mtfftc(data1,tapers,nfft,Fs);
   J2=mtfftc(data2,tapers,nfft,Fs);

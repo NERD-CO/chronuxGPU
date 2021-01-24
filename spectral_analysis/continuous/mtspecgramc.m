@@ -84,18 +84,24 @@ else
     if nargout==4; Serr=zeros(2,nw,Nf,Ch); end;
 end
 
-for n=1:nw;
-   indx=winstart(n):winstart(n)+Nwin-1;
-   datawin=data(indx,:);
-   if nargout==4
-     [s,f,serr]=mtspectrumc(datawin,params);
-     Serr(1,n,:,:)=squeeze(serr(1,:,:));
-     Serr(2,n,:,:)=squeeze(serr(2,:,:));
-   else
-     [s,f]=mtspectrumc(datawin,params);
-   end
-   S(n,:,:)=s;
-end;
+if nargout == 4
+    for n=1:nw
+        indx=winstart(n):winstart(n)+Nwin-1;
+        datawin=data(indx,:);
+        [s,f,serr]=mtspectrumc(datawin,params);
+        Serr(1,n,:,:)=squeeze(serr(1,:,:));
+        Serr(2,n,:,:)=squeeze(serr(2,:,:));
+        S(n,:,:)=s;
+    end
+else
+    parfor n=1:nw
+        indx=winstart(n):winstart(n)+Nwin-1;
+        datawin=data(indx,:);
+        [s,f]=mtspectrumc(datawin,params);
+        S(n,:,:)=s;
+    end
+end
+
 S=squeeze(S); 
 if nargout==4;Serr=squeeze(Serr);end;
 winmid=winstart+round(Nwin/2);
