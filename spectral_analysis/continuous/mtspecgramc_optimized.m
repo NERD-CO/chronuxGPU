@@ -1,8 +1,8 @@
-function [S,t,f,Serr]=mtspecgramc_parallel(data,movingwin,params)
+function [S,t,f,Serr]=mtspecgramc_optimized(data,movingwin,params)
 % Multi-taper time-frequency spectrum - continuous process
 %
 % Usage:
-% [S,t,f,Serr]=mtspecgramc_parallel(data,movingwin,params)
+% [S,t,f,Serr]=mtspecgramc(data,movingwin,params)
 % Input: 
 % Note units have to be consistent. Thus, if movingwin is in seconds, Fs
 % has to be in Hz. see chronux.m for more information.
@@ -80,38 +80,28 @@ if trialave
     S = zeros(nw,Nf);
     if nargout==4; Serr=zeros(2,nw,Nf); end;
 else
-    S = zeros(nw,Nf,Ch);
+    S = zeros(nw,Nf,Ch, 'single');
     if nargout==4; Serr=zeros(2,nw,Nf,Ch); end;
 end
 
-% Break up the data into cells before parallel execution
-datawin = cell(1, nw);
-for n=1:nw
-    indx=winstart(n):winstart(n)+Nwin-1;
-    datawin{n}=data(indx,:);
+if nargout == 4
+    for n=1:nw
+        indx=winstart(n):winstart(n)+Nwin-1;
+        datawin=data(indx,:);
+        [s,f,serr]=mtspectrumc(datawin,params);
+        Serr(1,n,:,:)=squeeze(serr(1,:,:));
+        Serr(2,n,:,:)=squeeze(serr(2,:,:));
+        S(n,:,:)=s;
+    end
+else
+    parfor n=1:nw
+        indx=winstart(n):winstart(n)+Nwin-1;
+        datawin=data(indx,:);
+        [s,f]=mtspectrumc(datawin,params);
+        S(n,:,:)=s;
+    end
 end
 
-clear data; % free up some memory
-parfor n=1:nw
-    s=mtspectrumc(datawin{n},params);
-    S(n,:,:)=gather(s);
-end
-
-% if nargout==4
-%     parfor n=1:nw
-%         indx=winstart(n):winstart(n)+Nwin-1;
-%         datawin=data(indx,:);
-%         [s,f,serr]=mtspectrumc(datawin,params);
-%         S(n,:,:)=s;
-%     end
-% else
-%     parfor n=1:nw;
-%         indx=winstart(n):winstart(n)+Nwin-1;
-%         datawin=data(indx,:);
-%         [s,f]=mtspectrumc(datawin,params);
-%         S(n,:,:)=s;
-%     end
-% end
 S=squeeze(S); 
 if nargout==4;Serr=squeeze(Serr);end;
 winmid=winstart+round(Nwin/2);

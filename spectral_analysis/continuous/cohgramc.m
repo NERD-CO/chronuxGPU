@@ -111,29 +111,42 @@ else
    phistd=zeros(nw,Nf,Ch);
 end;
 
-for n=1:nw;
-   indx=winstart(n):winstart(n)+Nwin-1;
-   datawin1=data1(indx,:);datawin2=data2(indx,:);
-   if nargout==10;
-     [c,ph,s12,s1,s2,f,confc,phie,cerr]=coherencyc(datawin1,datawin2,params);
-%      phierr(1,n,:,:)=squeeze(phie(1,:,:));
-%      phierr(2,n,:,:)=squeeze(phie(2,:,:));
-     phistd(n,:,:)=phie;
-     Cerr(1,n,:,:)=squeeze(cerr(1,:,:));
-     Cerr(2,n,:,:)=squeeze(cerr(2,:,:));
-   elseif nargout==9;
-     [c,ph,s12,s1,s2,f,confc,phie]=coherencyc(datawin1,datawin2,params);
-%      phierr(1,n,:,:)=squeeze(phie(1,:,:));
-%      phierr(2,n,:,:)=squeeze(phie(2,:,:));
-      phistd(n,:,:)=phie;
-   else
-     [c,ph,s12,s1,s2,f]=coherencyc(datawin1,datawin2,params);
-   end;
-   C(n,:,:)=c;
-   S12(n,:,:)=s12;
-   S1(n,:,:)=s1;
-   S2(n,:,:)=s2;
-   phi(n,:,:)=ph;
+
+% Break up the data into cells before parallel execution
+datawin1 = cell(1, nw);
+datawin2 = cell(1, nw);
+for n=1:nw
+    indx=winstart(n):winstart(n)+Nwin-1;
+    datawin1{n}=data1(indx,:);
+    datawin2{n} = data2(indx,:);
+end
+
+
+
+clear data1; % free up some memory
+clear data2;
+
+parfor q=1:nw
+%    if nargout==10;
+%      [c,ph,s12,s1,s2,f,confc,phie,cerr]=coherencyc(datawin1,datawin2,params);
+% %      phierr(1,n,:,:)=squeeze(phie(1,:,:));
+% %      phierr(2,n,:,:)=squeeze(phie(2,:,:));
+%      phistd(n,:,:)=phie;
+%      Cerr(1,n,:,:)=squeeze(cerr(1,:,:));
+%      Cerr(2,n,:,:)=squeeze(cerr(2,:,:));
+%    elseif nargout==9;
+%      [c,ph,s12,s1,s2,f,confc,phie]=coherencyc(datawin1,datawin2,params);
+% %      phierr(1,n,:,:)=squeeze(phie(1,:,:));
+% %      phierr(2,n,:,:)=squeeze(phie(2,:,:));
+%       phistd(n,:,:)=phie;
+%    else
+     [c,ph,s12,s1,s2,f]=coherencyc(datawin1{q},datawin2{q},params);
+%    end;
+   C(q,:,:)=c;
+   S12(q,:,:)=s12;
+   S1(q,:,:)=s1;
+   S2(q,:,:)=s2;
+   phi(q,:,:)=ph;
 end;
 C=squeeze(C); phi=squeeze(phi);S12=squeeze(S12); S1=squeeze(S1); S2=squeeze(S2);
 if nargout > 8; confC=confc; end;
